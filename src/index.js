@@ -16,7 +16,11 @@ app.server = http.createServer(app);
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
 app.use(morgan('dev'));
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'PUT', 'POST', 'DELETE'],
+}));
 
 //Configurações de Autenticação
 app.use(passport.initialize());
