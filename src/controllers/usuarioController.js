@@ -120,13 +120,14 @@ module.exports = () => {
         });
     });
 
-    api.get('/:email', authenticate, (req, res) => {
+    api.get('/:email', (req, res) => {
+        console.log(req.params.email)
         Usuario.findOne({ "username": req.params.email }, (error, usuario) => {
             if (error) {
-                console.log("Ocorreu um erro ao tentar buscar os dados do usuário...: " + error);
+                res.send("Ocorreu um erro ao tentar buscar os dados do usuário...: " + error);
             } else {
-                res.status(200).json({usuario});
-            }
+                res.send({usuario});
+            }   
         });
     });
 
