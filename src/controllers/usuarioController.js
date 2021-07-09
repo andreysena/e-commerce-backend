@@ -1,9 +1,6 @@
 let express = require('express');
 let api = express.Router();
 const passport = require('passport');
-const LocalStorage = require('node-localstorage').LocalStorage;
-
-let localStorage = new LocalStorage('./scratch');
 
 const Usuario = require('../models/usuario');
 const authenticate = require('../middleware/authMiddleware').authenticate;
@@ -12,11 +9,10 @@ const respond = require('../middleware/authMiddleware').respond;
 
 module.exports = () => {
     
-    //CADASTRAR USUÁRIO - http://localhost:4000/usuario/cadastrar
     api.post('/cadastrar', (req, res) => {
         let novoUsuario = new Usuario({
             nome: req.body.nome,
-            username: req.body.email,
+            email: req.body.email,
             telefone: req.body.telefone,
             cpf: req.body.cpf,
             endereco: req.body.endereco
@@ -36,24 +32,20 @@ module.exports = () => {
         });
     });
 
-    //LOGIN DE USUÁRIO - http://localhost:4000/usuario/login
     api.post('/login', passport.authenticate(
         'local', {
             session: false,
             scope: []
         }), genereteAccessToken, respond);
 
-    //LOGOUT DE USUÁRIO - http://localhost:4000/usuario/logout
     api.get('/logout', authenticate, (req, res) => {
         req.logout;
-        localStorage.setItem('userEmail', "");
         res.status(200).send("Você saiu da sua conta!");
     });
 
-    //ATUALIZAR O EMAIL DO USUÁRIO LOGADO - http://localhost:4000/usuario/atualizar-email
-    api.put('/atualizar-email', authenticate, (req, res) => {
+    api.put('/atualizar-email/:email', authenticate, (req, res) => {
         Usuario.updateOne(
-            { "username": localStorage.userEmail }, 
+            { "username": req.params.email }, 
             { "$set": { "username": req.body.novoEmail } },
             (error) => {
                 if (error) {
@@ -78,9 +70,8 @@ module.exports = () => {
         });
     });
 
-    //ATUALIZAR SENHA DO USUÁRIO LOGADO - http://localhost:4000/usuario/atualizar-senha
-    api.put('/atualizar-senha', authenticate, (req, res) => {
-        Usuario.findOne({ "username": localStorage.userEmail }, (error, usuario) => {
+    api.put('/atualizar-senha/:email', authenticate, (req, res) => {
+        Usuario.findOne({ "username": req.params.email }, (error, usuario) => {
             if (error) {
                 console.log("Ocorreu um erro ao tentar encontrar as informações do usuário logado...: " + error);
             }
@@ -108,11 +99,10 @@ module.exports = () => {
         });
     });
 
-    //ATUALIZAR OS DADOS DO USUÁRIO - http://localhost:4000/usuario/atualizar-dados
-    api.put('/atualizar-dados', authenticate, (req, res) => {
-        Usuario.findOne({ "username": localStorage.userEmail }, (error, usuario) => {
+    api.put('/atualizar-dados/:email', authenticate, (req, res) => {
+        Usuario.findOne({ "username": req.params.email }, (error, usuario) => {
             if (error) {
-                res.send("Naõ foi possível encontrar os dados do usuário...: " + error);
+                res.send("Não foi possível encontrar os dados do usuário...: " + error);
             } else {
                 usuario.nome = req.body.nome === usuario.nome || req.body.nome === undefined ? usuario.nome : req.body.nome;
                 usuario.telefone = req.body.telefone === usuario.telefone || req.body.telefone === undefined ? usuario.telefone : req.body.telefone;
@@ -130,13 +120,12 @@ module.exports = () => {
         });
     });
 
-    //EXIBIR TODOS OS USUAŔIOS CADASTRADOS - http://localhost:4000/usuario/lista
-    api.get('/', (req, res) => {
-        Usuario.find({}, (error, usuarios) => {
+    api.get('/:email', authenticate, (req, res) => {
+        Usuario.findOne({ "username": req.params.email }, (error, usuario) => {
             if (error) {
-                console.log("Ocorreu um erro ao tentar buscar os usuários...: " + error);
+                console.log("Ocorreu um erro ao tentar buscar os dados do usuário...: " + error);
             } else {
-                res.status(200).json({usuarios});
+                res.status(200).json({usuario});
             }
         });
     });

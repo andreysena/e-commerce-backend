@@ -4,8 +4,7 @@ let api = express.Router()
 const Categoria = require('../models/categoria');
 
 module.exports = () => {
-    
-    //CADASTRAR CATEGORIA - http://localhost:4000/categoria/cadastrar
+
     api.post('/cadastrar', (req, res) => {
 
         let novaCategoria = new Categoria();
@@ -21,7 +20,6 @@ module.exports = () => {
         });
     });
 
-    //BUSCAR TODAS AS CATEGORIAS - http://localhost:4000/categoria/
     api.get('/', (req, res) => {
         Categoria.find({}, (error, categorias) => {
             if (error) {
@@ -32,7 +30,6 @@ module.exports = () => {
         });
     });
 
-    //BUSCAR UMA CATEGORIA POR NOME - http://localhost:4000/categoria/:nome
     api.get('/:nome', (req, res) => {
         Categoria.findOne({ "nome": req.params.nome}, (error, categoria) => {
             if (error) {
@@ -43,7 +40,6 @@ module.exports = () => {
         });
     });
 
-    //EXCLUIR CATEGORIA POR NOME - http://localhost:4000/categoria/excluir/:nome
     api.delete('/excluir/:nome', (req, res) => {
         Categoria.deleteOne({ "nome": req.params.nome },  (error) => {
             if (error) {

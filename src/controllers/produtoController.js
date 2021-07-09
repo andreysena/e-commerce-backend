@@ -5,8 +5,7 @@ const Produto = require('../models/produto');
 const Categoria = require('../models/categoria');
 
 module.exports = () => {
-    
-    //CADASTRAR PRODUTO - http://localhosy:4000/produto/cadastrar
+
     api.post('/cadastrar', async (req, res) => {
         let novoProduto = new Produto();
         let categoriaProduto = {};
@@ -32,7 +31,6 @@ module.exports = () => {
         });
     });
 
-    //BUSCAR TODOS OS PRODUTOS - http://localhost:4000/produto
     api.get('/', (req, res) => {
         Produto.find({}, (error, produtos) => {
             if (error) {
@@ -43,7 +41,6 @@ module.exports = () => {
         });
     });
 
-    //BUSCAR UM PRODUTO POR NOME - http://localhost:4000/produto/:nome
     api.get('/:nome', (req, res) => {
         Produto.findOne({ "nome": req.params.nome }, (error, produto) => {
             if (error) {
@@ -54,7 +51,6 @@ module.exports = () => {
         });
     });
 
-    //EXCLUIR PRODUTO PRO NOME - http://localhost:4000/produto/excluir/:nome
     api.delete('/excluir/:nome', (req, res) => {
         Produto.deleteOne({ "nome": req.params.nome }, (error) => {
             if (error) {

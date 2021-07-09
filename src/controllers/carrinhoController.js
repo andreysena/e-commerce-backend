@@ -12,7 +12,6 @@ let authenticate = require('../middleware/authMiddleware').authenticate;
 
 module.exports = () => {
 
-    //CADASTRAR UM ITEM NO CARRINHO DO USUÁRIO LOGADO - http://localhost:4000/carrinho/cadastrar-produto
     api.put('/cadastrar-item', authenticate, async (req, res) => {
         let infosProduto;
 
@@ -42,8 +41,6 @@ module.exports = () => {
         });
     });
 
-
-    //EDITAR UM ITEM DO CARRINHO DO USUÁRIO LOGADO - http://localhost:4000/carrinho/editar-item
     api.put('/editar-item', authenticate, (req, res) => {
 
         Usuario.updateOne(
@@ -58,7 +55,6 @@ module.exports = () => {
         });
     });
 
-    //REMOVER UM ITEM DO CARRINHO DO USUÁRIO LOGADO - http://localhost:4000/carrinho/remover-item
     api.put('/remover-item', authenticate, async (req, res) => {
         Usuario.updateOne(
             { "username": localStorage.userEmail },
