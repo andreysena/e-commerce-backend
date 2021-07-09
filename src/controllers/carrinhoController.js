@@ -1,9 +1,6 @@
 let express = require('express');
 let api = express.Router();
 const mongoose = require('mongoose');
-const LocalStorage = require('node-localstorage').LocalStorage;
-
-let localStorage = new LocalStorage('./scratch');
 
 const Usuario = require('../models/usuario');
 const Produto = require('../models/produto');
@@ -12,7 +9,7 @@ let authenticate = require('../middleware/authMiddleware').authenticate;
 
 module.exports = () => {
 
-    api.put('/cadastrar-item', authenticate, async (req, res) => {
+    api.put('/cadastrar-item/:email', authenticate, async (req, res) => {
         let infosProduto;
 
         await Produto.findOne({ "nome": req.body.nomeProduto }, (error, produto) => {
@@ -30,7 +27,7 @@ module.exports = () => {
         }
 
         Usuario.updateOne(
-            { "username": localStorage.userEmail },
+            { "username": req.params.email },
             { "$push": { "carrinho": novoItem } },
             { useFindAndModify: false }, (error) => {
                 if (error) {
@@ -41,10 +38,10 @@ module.exports = () => {
         });
     });
 
-    api.put('/editar-item', authenticate, (req, res) => {
+    api.put('/editar-item/:email', authenticate, (req, res) => {
 
         Usuario.updateOne(
-            { "username": localStorage.userEmail, "carrinho._id": mongoose.Types.ObjectId(req.body.itemId) },
+            { "username": req.params.email, "carrinho._id": mongoose.Types.ObjectId(req.body.itemId) },
             { "$set": { "carrinho.$.quantidade": req.body.quantidade } } ,
             (error) => {
                 if (error) {
@@ -55,9 +52,9 @@ module.exports = () => {
         });
     });
 
-    api.put('/remover-item', authenticate, async (req, res) => {
+    api.put('/remover-item/:email', authenticate, async (req, res) => {
         Usuario.updateOne(
-            { "username": localStorage.userEmail },
+            { "username": req.params.email },
             { "$pull": { "carrinho": { "_id": mongoose.Types.ObjectId(req.body.itemId)} } },
             { useFindAndModify: false }, (error) => {
                 if (error) {
