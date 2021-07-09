@@ -120,8 +120,7 @@ module.exports = () => {
         });
     });
 
-    api.get('/:email', (req, res) => {
-
+    api.get('/:email', authenticate, (req, res) => {
         Usuario.find({ "username": req.params.email }, (error, usuario) => {
             if (error) {
                 res.send("Ocorreu um erro ao tentar buscar os dados do usuário...: " + error);
