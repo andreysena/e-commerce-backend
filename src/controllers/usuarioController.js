@@ -120,9 +120,9 @@ module.exports = () => {
         });
     });
 
-    api.get('/:email', async (req, res) => {
+    api.get('/:email', (req, res) => {
 
-        await Usuario.find({ "username": req.params.email }, (error, usuario) => {
+        Usuario.find({ "username": req.params.email }, (error, usuario) => {
             if (error) {
                 res.send("Ocorreu um erro ao tentar buscar os dados do usuário...: " + error);
             } else {
