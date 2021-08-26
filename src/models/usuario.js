@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const passportLocalMongoose = require('passport-local-mongoose');
+const bcrypt = require('bcryptjs');
 
 let Schema = mongoose.Schema;
 
@@ -8,8 +8,21 @@ let UsuarioSchema = new Schema({
         type: String,
         required: true,
     },
-    email: String,
-    senha: String,
+    foto_de_perfil: {
+        nome: String,
+        source: String,
+        mimetype: String,
+    },
+    email: {
+        type: String,
+        unique: true,
+        required: true
+    },
+    senha: {
+        type: String,
+        required: true,
+        select: false,
+    },
     telefone: {
         type: String,
         required: true,
@@ -24,11 +37,16 @@ let UsuarioSchema = new Schema({
     },
     carrinho: [{
         _id: mongoose.Types.ObjectId,
-        type: Object,
-        default: {}
+        type: Object
     }]
 });
 
-UsuarioSchema.plugin(passportLocalMongoose);
+UsuarioSchema.pre('save', async function(next) {
+    const hash = await bcrypt.hash(this.senha, 10);
+    this.senha = hash;
+
+    next();
+});
+
 
 module.exports = mongoose.model('Usuario', UsuarioSchema);

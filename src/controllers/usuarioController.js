@@ -1,52 +1,96 @@
-let express = require('express');
-let api = express.Router();
-const passport = require('passport');
+require('dotenv').config();
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const fs = require('fs');
+const api = express.Router();
 
 const Usuario = require('../models/usuario');
-const authenticate = require('../middleware/authMiddleware').authenticate;
-const genereteAccessToken = require('../middleware/authMiddleware').genereteAccessToken;
-const respond = require('../middleware/authMiddleware').respond;
+
+const authMiddleware = require('../middleware/auth');
+const multerConfigs = require('../middleware/multer');
+
+const genereteToken = (params = {}) => {
+    return jwt.sign(params, process.env.SECRET, {
+        expiresIn: 86400
+    })
+}
 
 module.exports = () => {
     
-    api.post('/cadastrar', (req, res) => {
+    api.post('/cadastrar', multer(multerConfigs).single('file'), async (req, res) => {
+
+        if (await Usuario.findOne({ "email": req.body.email }))
+            return res.status(400).send({'error': "Este email já está em utilização!"});
+        
         let novoUsuario = new Usuario({
             nome: req.body.nome,
             email: req.body.email,
+            senha: req.body.senha,
             telefone: req.body.telefone,
             cpf: req.body.cpf,
             endereco: req.body.endereco
         });
 
-        Usuario.register((novoUsuario), req.body.senha, (error) => {
-            if (error) {
-                res.status(500).send("Ocorreu um erro ao tentar cadastrar um novo usuário...: " + error);
+        if (req.file) {
+            novoUsuario.foto_de_perfil = {
+                nome: req.file.originalname,
+                source: fs.readFileSync(`./tmp/uploads/${req.file.filename}`, 'base64'),
+                mimetype: req.file.mimetype
             }
 
-            passport.authenticate(
-                'local', {
-                    session: false
-                }) (req, res, () => {
-                    res.status(200).send("Usuário cadastrado com sucesso!");
+            fs.unlink(`./tmp/uploads/${req.file.filename}`, (error) => {
+                if (error) throw error;
+            });
+        }
+
+        novoUsuario.save((error, usuario) => {
+            if (error) {
+                return res.send({'error': "Ocorreu ao tentar cadastrar o usuário."})
+            }
+
+            usuario.senha = undefined;
+            return res.status(200).send({
+                usuario,
+                token: genereteToken({ id: usuario._id })
             });
         });
     });
 
-    api.post('/login', passport.authenticate(
-        'local', {
-            session: false,
-            scope: []
-        }), genereteAccessToken, respond);
+    // api.post('/foto', multer(multerConfigs).single('file'), (req, res) => {
+    //     console.log(req.file);
+    //     console.log("Body nome: ", req.body.nome);
+    //     res.status(200).send({'message': "Upload concluído com sucesso!"});
+    // });
 
-    api.get('/logout', authenticate, (req, res) => {
-        req.logout;
-        res.status(200).send("Você saiu da sua conta!");
+    api.post('/login', async(req, res) => {
+
+        const usuario = await Usuario.findOne({ "email": req.body.email }).select('+senha');
+
+        if (!usuario)
+            return res.status(400).send({'error': "Este usuário não existe!"});
+
+        if (!await bcrypt.compare(req.body.senha, usuario.senha))
+            return res.status(400).send({'error': "Senha inválida!"});
+
+        usuario.senha = undefined;
+
+        return res.status(200).send({
+            usuario, 
+            token: genereteToken({ id: usuario._id })
+        });
     });
 
-    api.put('/atualizar-email/:email', authenticate, (req, res) => {
+    // api.get('/logout', (req, res) => {
+    //     req.logout;
+    //     res.status(200).send("Você saiu da sua conta!");
+    // });
+
+    api.put('/atualizar-email/:email', (req, res) => {
         Usuario.updateOne(
-            { "username": req.params.email }, 
-            { "$set": { "username": req.body.novoEmail } },
+            { "email": req.params.email }, 
+            { "$set": { "email": req.body.novoEmail } },
             (error) => {
                 if (error) {
                     if (error.name === 'MongoError' && error.code === 11000){
@@ -61,7 +105,6 @@ module.exports = () => {
                         message: `Ocorreu um erro ao tentar atualizar o email do usuário...: ${error}`
                     });
                 } else {
-                    localStorage.setItem('userEmail', req.body.novoEmail);
                     return res.status(200).send({
                         success: true,
                         message: "Email atualizado com sucesso!"
@@ -70,8 +113,8 @@ module.exports = () => {
         });
     });
 
-    api.put('/atualizar-senha/:email', authenticate, (req, res) => {
-        Usuario.findOne({ "username": req.params.email }, (error, usuario) => {
+    api.put('/atualizar-senha/:email', (req, res) => {
+        Usuario.findOne({ "email": req.params.email }, (error, usuario) => {
             if (error) {
                 console.log("Ocorreu um erro ao tentar encontrar as informações do usuário logado...: " + error);
             }
@@ -99,8 +142,8 @@ module.exports = () => {
         });
     });
 
-    api.put('/atualizar-dados/:email', authenticate, (req, res) => {
-        Usuario.findOne({ "username": req.params.email }, (error, usuario) => {
+    api.put('/atualizar-dados/:email', (req, res) => {
+        Usuario.findOne({ "email": req.params.email }, (error, usuario) => {
             if (error) {
                 res.send("Não foi possível encontrar os dados do usuário...: " + error);
             } else {
@@ -120,8 +163,8 @@ module.exports = () => {
         });
     });
 
-    api.get('/:email', authenticate, (req, res) => {
-        Usuario.find({ "username": req.params.email }, (error, usuario) => {
+    api.get('/:email', (req, res) => {
+        Usuario.find({ "email": req.params.email }, (error, usuario) => {
             if (error) {
                 res.send("Ocorreu um erro ao tentar buscar os dados do usuário...: " + error);
             } else {

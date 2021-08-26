@@ -5,11 +5,10 @@ const mongoose = require('mongoose');
 const Usuario = require('../models/usuario');
 const Produto = require('../models/produto');
 
-let authenticate = require('../middleware/authMiddleware').authenticate;
 
 module.exports = () => {
 
-    api.put('/cadastrar-item/:email', authenticate, async (req, res) => {
+    api.put('/cadastrar-item/:email', async (req, res) => {
         let infosProduto;
 
         await Produto.findOne({ "nome": req.body.nomeProduto }, (error, produto) => {
@@ -38,7 +37,7 @@ module.exports = () => {
         });
     });
 
-    api.put('/editar-item/:email', authenticate, (req, res) => {
+    api.put('/editar-item/:email', (req, res) => {
 
         Usuario.updateOne(
             { "username": req.params.email, "carrinho._id": mongoose.Types.ObjectId(req.body.itemId) },
@@ -52,7 +51,7 @@ module.exports = () => {
         });
     });
 
-    api.put('/remover-item/:email', authenticate, async (req, res) => {
+    api.put('/remover-item/:email', async (req, res) => {
         Usuario.updateOne(
             { "username": req.params.email },
             { "$pull": { "carrinho": { "_id": mongoose.Types.ObjectId(req.body.itemId)} } },

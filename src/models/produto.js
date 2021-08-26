@@ -7,6 +7,11 @@ let ProdutoSchema = new Schema({
         type: String,
         required: true
     },
+    foto_do_produto: {
+        nome: String,
+        source: String,
+        mimetype: String,
+    },
     preco: {
         type: Number,
         required: true
